@@ -1,4 +1,4 @@
-"""Fetch Instagram Reel audio via RapidAPI and convert to MP3 with ffmpeg."""
+"""Fetch Instagram Reel audio via RapidAPI (instagram120) and convert to MP3."""
 
 from __future__ import annotations
 
@@ -14,9 +14,9 @@ from urllib.parse import urlparse, urlunparse
 
 import httpx
 
-RAPIDAPI_HOST = os.environ.get("RAPIDAPI_HOST", "instagram-scraper-stable-api.p.rapidapi.com")
-# Endpoint path for fetching reel/post data — override via RAPIDAPI_ENDPOINT env var
-RAPIDAPI_ENDPOINT = os.environ.get("RAPIDAPI_ENDPOINT", "/get_media_data.php")
+# instagram120.p.rapidapi.com — POST /api/instagram/links, body {"url": "<reel_url>"}
+RAPIDAPI_HOST = os.environ.get("RAPIDAPI_HOST", "instagram120.p.rapidapi.com")
+RAPIDAPI_ENDPOINT = os.environ.get("RAPIDAPI_ENDPOINT", "/api/instagram/links")
 
 INSTAGRAM_URL_RE = re.compile(
     r"^https?://(www\.)?instagram\.com/(reel|reels|p|tv)/[\w-]+/?", re.IGNORECASE
@@ -42,54 +42,44 @@ def is_valid_instagram_url(url: str) -> bool:
 
 
 def clean_instagram_url(url: str) -> str:
-    """Strip query params and fragments — the API only wants the clean path URL."""
+    """Strip query params/fragments so the API gets a clean URL."""
     parsed = urlparse(url.strip())
     return urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", "")).rstrip("/") + "/"
 
 
-def extract_shortcode(url: str) -> str:
-    """Extract the reel/post shortcode from an Instagram URL."""
-    match = re.search(r"/(?:reel|reels|p|tv)/([\w-]+)", url)
-    return match.group(1) if match else url
-
-
 async def _fetch_reel_info(url: str) -> dict:
-    """Call RapidAPI and return {'video_url': ..., 'title': ...}."""
+    """POST to RapidAPI and return {'video_url': ..., 'title': ..., 'needs_auth': bool}."""
     api_key = os.environ.get("RAPIDAPI_KEY", "")
     if not api_key:
-        raise ConversionError(
-            "Server is missing RAPIDAPI_KEY. Contact the site administrator."
-        )
+        raise ConversionError("Server is missing RAPIDAPI_KEY. Contact the site administrator.")
 
     api_host = os.environ.get("RAPIDAPI_HOST", RAPIDAPI_HOST)
     api_endpoint = os.environ.get("RAPIDAPI_ENDPOINT", RAPIDAPI_ENDPOINT)
+    clean_url = clean_instagram_url(url)
+
     headers = {
         "X-RapidAPI-Key": api_key,
         "X-RapidAPI-Host": api_host,
+        "Content-Type": "application/json",
     }
 
-    clean_url = clean_instagram_url(url)
-    shortcode = extract_shortcode(url)
-
     async with httpx.AsyncClient(timeout=30) as client:
-        # Try shortcode first, fall back to full URL if it returns an error body
-        resp = await client.get(
+        resp = await client.post(
             f"https://{api_host}{api_endpoint}",
-            params={"reel_post_code_or_url": shortcode, "type": "reel"},
+            json={"url": clean_url},
             headers=headers,
         )
 
-    # DEBUG — print raw response until parser is confirmed working
-    print(f"=== RAPIDAPI STATUS: {resp.status_code} | shortcode: {shortcode} | clean_url: {clean_url} ===")
-    print(resp.text[:3000])
+    print(f"=== RAPIDAPI STATUS: {resp.status_code} | url: {clean_url} ===")
+    print(resp.text[:4000])
     print("==========================================")
 
     if resp.status_code == 401:
         raise ConversionError("RapidAPI key is invalid or expired.")
     if resp.status_code == 429:
         raise ConversionError("Too many requests. Please try again in a moment.")
-    if resp.status_code == 404:
-        raise ConversionError("That Reel wasn't found. It may be private or deleted.")
+    if resp.status_code == 403:
+        raise ConversionError("Not subscribed to this API. Check your RapidAPI subscription.")
 
     try:
         resp.raise_for_status()
@@ -97,62 +87,67 @@ async def _fetch_reel_info(url: str) -> dict:
     except Exception as exc:
         raise ConversionError(f"Scraper API returned status {resp.status_code}.") from exc
 
-    # Some APIs return 200 with an error field instead of an HTTP error code
-    if "error" in payload and not payload.get("data"):
-        raise ConversionError(
-            "That Reel couldn't be found. It may be private, deleted, or unavailable."
-        )
+    # Response is a JSON array of media items
+    if not isinstance(payload, list) or not payload:
+        raise ConversionError("That Reel couldn't be found. It may be private or deleted.")
 
-    data = payload.get("data") or {}
-
-    # Grab the best available video URL
-    video_url = (
-        data.get("video_url")
-        or _pick_from_versions(data.get("video_versions"))
-    )
+    # Find the best MP4 item
+    video_url, needs_auth = _pick_mp4(payload, api_host)
     if not video_url:
-        raise ConversionError(
-            "No video found in that post — it may be a photo or carousel."
-        )
+        raise ConversionError("No video found in that post — it may be a photo only.")
 
-    raw_caption = data.get("caption") or {}
-    raw_text = (
-        raw_caption.get("text") if isinstance(raw_caption, dict) else str(raw_caption)
-    ) or "oudiodown_track"
-    title = re.sub(r"[^\w\-. ]+", "", raw_text).strip()[:80] or "oudiodown_track"
+    # Extract title from first item's meta
+    title = ""
+    for item in payload:
+        meta = item.get("meta") or {}
+        title = (meta.get("title") or "").strip()
+        if title:
+            break
+    safe_title = re.sub(r"[^\w\-. ]+", "", title).strip()[:80] or "oudiodown_track"
 
-    return {"video_url": video_url, "title": title}
+    return {"video_url": video_url, "title": safe_title, "needs_auth": needs_auth, "api_host": api_host}
 
 
-def _pick_from_versions(versions) -> Optional[str]:
-    if not isinstance(versions, list) or not versions:
-        return None
-    # Prefer highest width
-    best = max(versions, key=lambda v: v.get("width", 0) if isinstance(v, dict) else 0)
-    return best.get("url") if isinstance(best, dict) else None
+def _pick_mp4(items: list, api_host: str) -> tuple[Optional[str], bool]:
+    """Find the best MP4 URL. Returns (url, needs_api_auth).
+    Relative URLs (/api/instagram/get?...) must be downloaded with the API key header."""
+    for item in items:
+        for u in item.get("urls", []):
+            if isinstance(u, dict) and u.get("extension", "").lower() == "mp4":
+                raw = u.get("url", "")
+                if raw.startswith("http"):
+                    return raw, False
+                # Relative proxy URL — prepend the API host
+                return f"https://{api_host}{raw}", True
+    return None, False
 
 
 async def convert_reel_to_mp3(url: str, job_id: str) -> dict:
-    """Full pipeline: fetch → download → ffmpeg → MP3. Returns title."""
+    """Full pipeline: fetch info → download video → ffmpeg → MP3."""
     url = url.strip()
     if not is_valid_instagram_url(url):
         raise InvalidUrlError("That doesn't look like a valid Instagram Reel URL.")
 
     info = await _fetch_reel_info(url)
 
+    api_key = os.environ.get("RAPIDAPI_KEY", "")
+    download_headers = {}
+    if info.get("needs_auth"):
+        download_headers = {
+            "X-RapidAPI-Key": api_key,
+            "X-RapidAPI-Host": info["api_host"],
+        }
+
     tmp_video = Path(tempfile.mktemp(suffix=".mp4"))
     try:
-        # Stream-download the video file
         async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
-            async with client.stream("GET", info["video_url"]) as resp:
+            async with client.stream("GET", info["video_url"], headers=download_headers) as resp:
                 resp.raise_for_status()
                 with open(tmp_video, "wb") as fh:
                     async for chunk in resp.aiter_bytes(chunk_size=65536):
                         fh.write(chunk)
 
         mp3_path = DOWNLOAD_DIR / f"{job_id}.mp3"
-
-        # Run ffmpeg in a thread so we don't block the event loop
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, _ffmpeg_extract, tmp_video, mp3_path)
 
@@ -164,17 +159,12 @@ async def convert_reel_to_mp3(url: str, job_id: str) -> dict:
 
 def _ffmpeg_extract(src: Path, dst: Path) -> None:
     result = subprocess.run(
-        [
-            "ffmpeg", "-y", "-i", str(src),
-            "-vn", "-acodec", "libmp3lame", "-ab", "192k",
-            str(dst),
-        ],
+        ["ffmpeg", "-y", "-i", str(src), "-vn", "-acodec", "libmp3lame", "-ab", "192k", str(dst)],
         capture_output=True,
     )
     if result.returncode != 0:
         raise ConversionError(
-            "Audio extraction failed — ffmpeg error: "
-            + result.stderr.decode(errors="replace")[:300]
+            "Audio extraction failed: " + result.stderr.decode(errors="replace")[:300]
         )
 
 
