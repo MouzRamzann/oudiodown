@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
+import tempfile
 import time
 import uuid
 from pathlib import Path
@@ -11,10 +13,8 @@ from typing import Optional
 
 import yt_dlp
 
-# Path to a Netscape-format cookies.txt file exported from a logged-in
-# Instagram browser session.  Instagram requires authentication for most
-# content when accessed via automated tools.
-# Export with: "Get cookies.txt LOCALLY" browser extension → instagram.com
+# Path to a cookies file (Netscape .txt OR JSON array from browser extensions
+# like EditThisCookie / Cookie-Editor).  JSON is converted automatically.
 COOKIES_FILE = os.environ.get("INSTAGRAM_COOKIES_FILE", "")
 
 INSTAGRAM_URL_RE = re.compile(
@@ -38,6 +38,47 @@ class ConversionError(Exception):
 
 def is_valid_instagram_url(url: str) -> bool:
     return bool(INSTAGRAM_URL_RE.match(url.strip()))
+
+
+def _json_cookies_to_netscape(json_path: Path) -> Path:
+    """Convert a JSON cookie array (EditThisCookie / Cookie-Editor format)
+    to a Netscape cookies.txt file.  Returns the path to the temp file."""
+    cookies = json.loads(json_path.read_text(encoding="utf-8"))
+    if not isinstance(cookies, list):
+        raise ValueError("Expected a JSON array of cookie objects.")
+
+    lines = ["# Netscape HTTP Cookie File"]
+    for c in cookies:
+        domain = c.get("domain", "")
+        # Netscape format requires a leading dot for subdomain-matching cookies
+        include_subdomains = "TRUE" if domain.startswith(".") else "FALSE"
+        path = c.get("path", "/")
+        secure = "TRUE" if c.get("secure", False) else "FALSE"
+        expiry = int(c.get("expirationDate", 0) or c.get("expires", 0) or 0)
+        name = c.get("name", "")
+        value = c.get("value", "")
+        lines.append(f"{domain}\t{include_subdomains}\t{path}\t{secure}\t{expiry}\t{name}\t{value}")
+
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".txt", delete=False, encoding="utf-8"
+    )
+    tmp.write("\n".join(lines) + "\n")
+    tmp.close()
+    return Path(tmp.name)
+
+
+def _resolve_cookies_path(raw: str) -> Optional[str]:
+    """Return a path to a Netscape cookies file, converting JSON if needed."""
+    p = Path(raw)
+    if not p.is_file():
+        return None
+    try:
+        json.loads(p.read_text(encoding="utf-8"))
+        # It's valid JSON — convert it
+        return str(_json_cookies_to_netscape(p))
+    except (json.JSONDecodeError, ValueError):
+        # Already Netscape format
+        return str(p)
 
 
 def convert_reel_to_mp3(url: str) -> dict:
@@ -71,9 +112,10 @@ def convert_reel_to_mp3(url: str) -> dict:
         ],
     }
 
-    cookies_path = Path(COOKIES_FILE) if COOKIES_FILE else None
-    if cookies_path and cookies_path.is_file():
-        ydl_opts["cookiefile"] = str(cookies_path)
+    if COOKIES_FILE:
+        resolved = _resolve_cookies_path(COOKIES_FILE)
+        if resolved:
+            ydl_opts["cookiefile"] = resolved
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -23,18 +23,27 @@ pip install -r requirements.txt
 
 ## Instagram cookies (required)
 
-Instagram blocks unauthenticated automated requests. You must supply a cookies file from a logged-in browser session:
+Instagram blocks unauthenticated automated requests. You must supply a cookies file from a logged-in browser session. Both **JSON** and **Netscape (.txt)** formats are accepted — JSON is converted automatically.
 
-1. Install the **"Get cookies.txt LOCALLY"** extension in Chrome or Firefox
+**Export with EditThisCookie (JSON — recommended):**
+1. Install **EditThisCookie** in Chrome (or **Cookie-Editor** in Firefox)
 2. Log into instagram.com
-3. Click the extension and export cookies for `instagram.com` — save the file somewhere (e.g. `~/instagram_cookies.txt`)
-4. Set the env var before starting the server:
+3. Click the extension → Export → saves a `.json` file
+4. Set the env var:
+
+```bash
+export INSTAGRAM_COOKIES_FILE=~/instagram_cookies.json
+```
+
+**Export as Netscape .txt instead:**
+1. Install **"Get cookies.txt LOCALLY"** in Chrome or Firefox
+2. Log into instagram.com → click extension → export for `instagram.com`
 
 ```bash
 export INSTAGRAM_COOKIES_FILE=~/instagram_cookies.txt
 ```
 
-Or copy `.env.example` to `.env` and fill it in, then load it with:
+Or copy `.env.example` to `.env`, fill it in, then:
 
 ```bash
 export $(cat .env | xargs)
