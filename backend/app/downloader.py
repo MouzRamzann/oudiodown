@@ -15,7 +15,7 @@ import httpx
 
 RAPIDAPI_HOST = os.environ.get("RAPIDAPI_HOST", "instagram-scraper-stable-api.p.rapidapi.com")
 # Endpoint path for fetching reel/post data — override via RAPIDAPI_ENDPOINT env var
-RAPIDAPI_ENDPOINT = os.environ.get("RAPIDAPI_ENDPOINT", "/ig_get_reel_info_v2.php")
+RAPIDAPI_ENDPOINT = os.environ.get("RAPIDAPI_ENDPOINT", "/get_media_data.php")
 
 INSTAGRAM_URL_RE = re.compile(
     r"^https?://(www\.)?instagram\.com/(reel|reels|p|tv)/[\w-]+/?", re.IGNORECASE
@@ -58,7 +58,7 @@ async def _fetch_reel_info(url: str) -> dict:
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(
             f"https://{api_host}{api_endpoint}",
-            params={"code_or_id_or_url": url},
+            params={"reel_post_code_or_url": url, "type": "reel"},
             headers=headers,
         )
 
