@@ -47,6 +47,12 @@ def clean_instagram_url(url: str) -> str:
     return urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", "")).rstrip("/") + "/"
 
 
+def extract_shortcode(url: str) -> str:
+    """Extract the reel/post shortcode from an Instagram URL."""
+    match = re.search(r"/(?:reel|reels|p|tv)/([\w-]+)", url)
+    return match.group(1) if match else url
+
+
 async def _fetch_reel_info(url: str) -> dict:
     """Call RapidAPI and return {'video_url': ..., 'title': ...}."""
     api_key = os.environ.get("RAPIDAPI_KEY", "")
@@ -63,16 +69,18 @@ async def _fetch_reel_info(url: str) -> dict:
     }
 
     clean_url = clean_instagram_url(url)
+    shortcode = extract_shortcode(url)
 
     async with httpx.AsyncClient(timeout=30) as client:
+        # Try shortcode first, fall back to full URL if it returns an error body
         resp = await client.get(
             f"https://{api_host}{api_endpoint}",
-            params={"reel_post_code_or_url": clean_url, "type": "reel"},
+            params={"reel_post_code_or_url": shortcode, "type": "reel"},
             headers=headers,
         )
 
     # DEBUG — print raw response until parser is confirmed working
-    print(f"=== RAPIDAPI STATUS: {resp.status_code} | URL sent: {clean_url} ===")
+    print(f"=== RAPIDAPI STATUS: {resp.status_code} | shortcode: {shortcode} | clean_url: {clean_url} ===")
     print(resp.text[:3000])
     print("==========================================")
 
