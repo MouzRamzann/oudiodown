@@ -59,6 +59,11 @@ async def _fetch_reel_info(url: str) -> dict:
             headers=headers,
         )
 
+    # DEBUG — always print raw response so we can fix the parser
+    print(f"=== RAPIDAPI STATUS: {resp.status_code} ===")
+    print(resp.text[:3000])
+    print("==========================================")
+
     if resp.status_code == 401:
         raise ConversionError("RapidAPI key is invalid or expired.")
     if resp.status_code == 429:
@@ -70,13 +75,7 @@ async def _fetch_reel_info(url: str) -> dict:
         resp.raise_for_status()
         payload = resp.json()
     except Exception as exc:
-        raise ConversionError("Unexpected response from the scraper API.") from exc
-
-    # DEBUG — remove once response structure is confirmed
-    import json as _json
-    print("=== RAPIDAPI RAW RESPONSE ===")
-    print(_json.dumps(payload, indent=2)[:3000])
-    print("=============================")
+        raise ConversionError(f"Scraper API returned status {resp.status_code}.") from exc
 
     data = payload.get("data") or {}
 
