@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import time
 import uuid
@@ -9,6 +10,12 @@ from pathlib import Path
 from typing import Optional
 
 import yt_dlp
+
+# Path to a Netscape-format cookies.txt file exported from a logged-in
+# Instagram browser session.  Instagram requires authentication for most
+# content when accessed via automated tools.
+# Export with: "Get cookies.txt LOCALLY" browser extension → instagram.com
+COOKIES_FILE = os.environ.get("INSTAGRAM_COOKIES_FILE", "")
 
 INSTAGRAM_URL_RE = re.compile(
     r"^https?://(www\.)?instagram\.com/(reel|reels|p|tv)/[\w-]+/?", re.IGNORECASE
@@ -64,13 +71,23 @@ def convert_reel_to_mp3(url: str) -> dict:
         ],
     }
 
+    cookies_path = Path(COOKIES_FILE) if COOKIES_FILE else None
+    if cookies_path and cookies_path.is_file():
+        ydl_opts["cookiefile"] = str(cookies_path)
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
     except yt_dlp.utils.DownloadError as exc:
+        msg = str(exc).lower()
+        if "login required" in msg or "rate-limit" in msg or "not available" in msg:
+            raise ConversionError(
+                "Instagram requires a logged-in session to access this content. "
+                "The server needs a valid cookies file configured via "
+                "INSTAGRAM_COOKIES_FILE. See README for setup instructions."
+            ) from exc
         raise ConversionError(
-            "We couldn't fetch that reel. It may be private, deleted, or "
-            "Instagram is temporarily blocking automated requests."
+            "We couldn't fetch that reel. It may be private or deleted."
         ) from exc
 
     mp3_path = DOWNLOAD_DIR / f"{job_id}.mp3"

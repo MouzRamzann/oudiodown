@@ -10,3 +10,5 @@ backend/downloads/*.tmp
 !backend/downloads/.gitkeep
 .DS_Store
 *.log
+backend/.env
+*_cookies.txt

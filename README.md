@@ -21,6 +21,27 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Instagram cookies (required)
+
+Instagram blocks unauthenticated automated requests. You must supply a cookies file from a logged-in browser session:
+
+1. Install the **"Get cookies.txt LOCALLY"** extension in Chrome or Firefox
+2. Log into instagram.com
+3. Click the extension and export cookies for `instagram.com` — save the file somewhere (e.g. `~/instagram_cookies.txt`)
+4. Set the env var before starting the server:
+
+```bash
+export INSTAGRAM_COOKIES_FILE=~/instagram_cookies.txt
+```
+
+Or copy `.env.example` to `.env` and fill it in, then load it with:
+
+```bash
+export $(cat .env | xargs)
+```
+
+Cookies expire over time — re-export them if you start getting auth errors again.
+
 ## Run
 
 ```bash
