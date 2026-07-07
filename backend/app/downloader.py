@@ -13,7 +13,6 @@ from typing import Optional
 
 import httpx
 
-RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY", "")
 RAPIDAPI_HOST = os.environ.get("RAPIDAPI_HOST", "instagram-scraper-api2.p.rapidapi.com")
 
 INSTAGRAM_URL_RE = re.compile(
@@ -41,19 +40,21 @@ def is_valid_instagram_url(url: str) -> bool:
 
 async def _fetch_reel_info(url: str) -> dict:
     """Call RapidAPI and return {'video_url': ..., 'title': ...}."""
-    if not RAPIDAPI_KEY:
+    api_key = os.environ.get("RAPIDAPI_KEY", "")
+    if not api_key:
         raise ConversionError(
             "Server is missing RAPIDAPI_KEY. Contact the site administrator."
         )
 
+    api_host = os.environ.get("RAPIDAPI_HOST", RAPIDAPI_HOST)
     headers = {
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": RAPIDAPI_HOST,
+        "X-RapidAPI-Key": api_key,
+        "X-RapidAPI-Host": api_host,
     }
 
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(
-            f"https://{RAPIDAPI_HOST}/v1/post_info",
+            f"https://{api_host}/v1/post_info",
             params={"code_or_id_or_url": url},
             headers=headers,
         )
