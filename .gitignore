@@ -11,4 +11,3 @@ backend/downloads/*.tmp
 .DS_Store
 *.log
 backend/.env
-*_cookies.txt

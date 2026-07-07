@@ -4,13 +4,23 @@ Convert public Instagram Reels to MP3 audio. HTML/CSS/JS frontend, FastAPI backe
 
 ## Stack
 
-- **Backend**: FastAPI + [yt-dlp](https://github.com/yt-dlp/yt-dlp) (fetches the Reel and extracts audio) + ffmpeg (audio conversion)
-- **Frontend**: Static HTML/CSS/JS, served directly by FastAPI (no build step)
+- **Backend**: FastAPI + httpx (async) + ffmpeg (audio extraction)
+- **Instagram data**: [RapidAPI — Instagram Scraper API 2](https://rapidapi.com/search/instagram-scraper-api2) — handles all Instagram auth, no cookies needed
+- **Frontend**: Static HTML/CSS/JS, served by FastAPI (no build step)
+
+## How it works
+
+1. User pastes a Reel URL → frontend POSTs to `/api/convert` and gets a `job_id` back immediately (non-blocking)
+2. Backend fetches the Reel's video URL via RapidAPI, downloads it, and runs ffmpeg to extract a 192kbps MP3
+3. Frontend polls `/api/status/{job_id}` every 2 seconds until `done`
+4. User downloads the MP3 via `/api/download/{job_id}`
+5. Files are automatically deleted after 1 hour
 
 ## Requirements
 
 - Python 3.10+
-- [ffmpeg](https://ffmpeg.org/download.html) installed and available on `PATH` (required by yt-dlp's audio extraction)
+- [ffmpeg](https://ffmpeg.org/download.html) installed and on `PATH`
+- A [RapidAPI](https://rapidapi.com) account with a subscription to **Instagram Scraper API 2**
 
 ## Setup
 
@@ -19,60 +29,37 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
 
-## Instagram cookies (required)
-
-Instagram blocks unauthenticated automated requests. You must supply a cookies file from a logged-in browser session. Both **JSON** and **Netscape (.txt)** formats are accepted — JSON is converted automatically.
-
-**Export with EditThisCookie (JSON — recommended):**
-1. Install **EditThisCookie** in Chrome (or **Cookie-Editor** in Firefox)
-2. Log into instagram.com
-3. Click the extension → Export → saves a `.json` file
-4. Set the env var:
-
-```bash
-export INSTAGRAM_COOKIES_FILE=~/instagram_cookies.json
-```
-
-**Export as Netscape .txt instead:**
-1. Install **"Get cookies.txt LOCALLY"** in Chrome or Firefox
-2. Log into instagram.com → click extension → export for `instagram.com`
-
-```bash
-export INSTAGRAM_COOKIES_FILE=~/instagram_cookies.txt
-```
-
-Or copy `.env.example` to `.env`, fill it in, then:
-
-```bash
+cp .env.example .env
+# Edit .env and add your RAPIDAPI_KEY
 export $(cat .env | xargs)
 ```
-
-Cookies expire over time — re-export them if you start getting auth errors again.
 
 ## Run
 
 ```bash
-cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Then open http://localhost:8000 — the frontend is served at `/`, the API under `/api`.
+Open http://localhost:8000 — frontend at `/`, API at `/api`.
 
 ## API
 
-- `POST /api/convert` — body `{"url": "https://www.instagram.com/reel/..."}` → `{"id", "title", "download_url"}`
-- `GET /api/download/{id}` — streams the generated MP3
-- `GET /api/health` — health check
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/convert` | Start a conversion job → `{"job_id": "..."}` |
+| `GET` | `/api/status/{id}` | Poll job status → `{status, title, download_url, error}` |
+| `GET` | `/api/download/{id}` | Download the generated MP3 |
+| `GET` | `/api/health` | Health check |
 
-Generated MP3 files are stored in `backend/downloads/` and automatically deleted after 1 hour.
+## Rate limiting
 
-## Deploying to oudiodown.com
+10 requests per IP per 60 seconds (in-memory, resets on restart).
 
-Any host that can run a Python/ASGI app with ffmpeg installed works (e.g. a VM, Docker container, or PaaS with a custom buildpack that installs ffmpeg). Point the domain's DNS at the server running `uvicorn`/`gunicorn`, and put a reverse proxy (nginx/Caddy) in front for HTTPS.
+## Deploying
 
-## Notes
+Any host that runs Python/ASGI with ffmpeg:
+- Set `RAPIDAPI_KEY` as an environment variable on the server
+- Put nginx/Caddy in front for HTTPS and reverse-proxy to `uvicorn`/`gunicorn`
 
-- Only public Reels/posts can be converted — private content isn't supported.
-- This tool is intended for personal use; respect creators' rights and Instagram's terms when downloading content.
+No cookies, no Instagram accounts, no session management needed.
