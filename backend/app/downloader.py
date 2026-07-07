@@ -72,6 +72,12 @@ async def _fetch_reel_info(url: str) -> dict:
     except Exception as exc:
         raise ConversionError("Unexpected response from the scraper API.") from exc
 
+    # DEBUG — remove once response structure is confirmed
+    import json as _json
+    print("=== RAPIDAPI RAW RESPONSE ===")
+    print(_json.dumps(payload, indent=2)[:3000])
+    print("=============================")
+
     data = payload.get("data") or {}
 
     # Grab the best available video URL
