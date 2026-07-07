@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b0a14"/>
+      <stop offset="100%" stop-color="#1a1530"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="150" cy="120" r="220" fill="#7C3AED" opacity="0.25"/>
+  <circle cx="1080" cy="520" r="240" fill="#EC4899" opacity="0.2"/>
+  <circle cx="180" cy="315" r="70" fill="url(#mark)"/>
+  <path d="M155 340V285l24 12v36m-24-36l24-12m24 48V300l24-12v40m-24-40l24-12" stroke="white" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="270" y="335" font-family="Segoe UI, Arial, sans-serif" font-size="72" font-weight="700" fill="#f4f2fb">Oudiodown</text>
+  <text x="270" y="385" font-family="Segoe UI, Arial, sans-serif" font-size="30" fill="#b7b2c9">Instagram Reels to MP3, instantly</text>
+</svg>

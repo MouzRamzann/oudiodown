@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.env
+backend/downloads/*.mp3
+backend/downloads/*.part
+backend/downloads/*.tmp
+!backend/downloads/.gitkeep
+.DS_Store
+*.log

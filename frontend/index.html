@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oudiodown — Convert Instagram Reels to MP3 Free & Fast</title>
+  <meta name="description" content="Oudiodown lets you convert any Instagram Reel to a high-quality MP3 in seconds. Just paste the link, click convert, and download your audio — free, fast, and no app required." />
+  <meta name="keywords" content="instagram reel to mp3, instagram audio downloader, reel to mp3 converter, download instagram audio, oudiodown" />
+  <meta name="author" content="Oudiodown" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://oudiodown.com/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Oudiodown" />
+  <meta property="og:title" content="Oudiodown — Convert Instagram Reels to MP3" />
+  <meta property="og:description" content="Paste an Instagram Reel link and get a clean MP3 download in seconds. Free, fast, no installs." />
+  <meta property="og:url" content="https://oudiodown.com/" />
+  <meta property="og:image" content="https://oudiodown.com/static/img/og-image.svg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Oudiodown — Convert Instagram Reels to MP3" />
+  <meta name="twitter:description" content="Paste an Instagram Reel link and get a clean MP3 download in seconds. Free, fast, no installs." />
+  <meta name="twitter:image" content="https://oudiodown.com/static/img/og-image.svg" />
+
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Oudiodown",
+    "url": "https://oudiodown.com/",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Convert Instagram Reels to MP3 audio files instantly, free of charge."
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is Oudiodown free to use?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. Oudiodown is completely free — paste a Reel link and download the MP3, no sign-up required." }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need to install an app?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. Oudiodown runs entirely in your browser. There's nothing to install on desktop or mobile." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I convert private Instagram reels?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Oudiodown only works with publicly accessible Reels and posts. Private content can't be processed." }
+      },
+      {
+        "@type": "Question",
+        "name": "What audio quality do I get?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Audio is extracted at 192kbps MP3, giving you clean, clear sound suitable for music, voiceovers, and podcasts." }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div class="bg-aurora" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+  </div>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary">
+      <a href="/" class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32">
+            <circle cx="24" cy="24" r="22" fill="url(#g1)"/>
+            <path d="M16 30V18l6 3v9m-6-9l6-3m6 12V21l6-3v10m-6-10l6-3" stroke="white" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="48" y2="48">
+                <stop offset="0%" stop-color="#7C3AED"/>
+                <stop offset="100%" stop-color="#EC4899"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        Oudiodown
+      </a>
+      <a class="nav-cta" href="#converter">Convert Now</a>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-heading">
+      <p class="eyebrow">Instagram Reel → MP3</p>
+      <h1 id="hero-heading">Turn any Instagram Reel into an MP3 in seconds</h1>
+      <p class="hero-sub">
+        Paste a public Reel link below. Oudiodown extracts the audio track and
+        hands you a clean, high-quality MP3 — free, fast, and without installing anything.
+      </p>
+
+      <section id="converter" class="converter-card" aria-labelledby="converter-heading">
+        <h2 id="converter-heading" class="sr-only">Instagram Reel to MP3 converter</h2>
+        <form id="convert-form" novalidate>
+          <label for="reel-url" class="sr-only">Instagram Reel URL</label>
+          <div class="input-row">
+            <input
+              id="reel-url"
+              name="url"
+              type="url"
+              inputmode="url"
+              placeholder="https://www.instagram.com/reel/..."
+              autocomplete="off"
+              required
+            />
+            <button type="submit" id="convert-btn">
+              <span class="btn-label">Convert to MP3</span>
+              <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+          <p id="form-hint" class="form-hint">Works with public Reels and posts on instagram.com</p>
+        </form>
+
+        <div id="result-panel" class="result-panel" hidden aria-live="polite">
+          <div class="result-icon" aria-hidden="true">🎧</div>
+          <div class="result-info">
+            <p class="result-title" id="result-title"></p>
+            <p class="result-sub">Your MP3 is ready</p>
+          </div>
+          <a id="download-link" class="download-btn" href="#" download>Download MP3</a>
+        </div>
+
+        <div id="error-panel" class="error-panel" hidden role="alert"></div>
+      </section>
+    </section>
+
+    <section class="how-it-works" aria-labelledby="how-heading">
+      <h2 id="how-heading">How it works</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <h3>Copy the Reel link</h3>
+          <p>Open Instagram, tap “Share” on any public Reel, then “Copy Link.”</p>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <h3>Paste &amp; convert</h3>
+          <p>Drop the link into Oudiodown and hit convert — we do the rest.</p>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <h3>Download your MP3</h3>
+          <p>Grab your 192kbps MP3 file, ready for any device or player.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="features" aria-labelledby="features-heading">
+      <h2 id="features-heading">Why Oudiodown</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Lightning fast</h3>
+          <p>Most conversions finish in a few seconds, straight from your browser.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎵</div>
+          <h3>High-quality audio</h3>
+          <p>192kbps MP3 output keeps music and voice crisp and clear.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>No sign-up</h3>
+          <p>No accounts, no app installs, no watermarks — just paste and go.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>Works everywhere</h3>
+          <p>Desktop, tablet, or mobile — Oudiodown runs in any modern browser.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq" aria-labelledby="faq-heading">
+      <h2 id="faq-heading">Frequently asked questions</h2>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Is Oudiodown free to use?</summary>
+          <p>Yes. Oudiodown is completely free — paste a Reel link and download the MP3, no sign-up required.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Do I need to install an app?</summary>
+          <p>No. Oudiodown runs entirely in your browser. There's nothing to install on desktop or mobile.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I convert private Instagram reels?</summary>
+          <p>Oudiodown only works with publicly accessible Reels and posts. Private content can't be processed.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What audio quality do I get?</summary>
+          <p>Audio is extracted at 192kbps MP3, giving you clean, clear sound suitable for music, voiceovers, and podcasts.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year"></span> Oudiodown. For personal use only — please respect creators' rights.</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
