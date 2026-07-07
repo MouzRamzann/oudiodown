@@ -10,6 +10,7 @@ import tempfile
 import time
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse, urlunparse
 
 import httpx
 
@@ -40,6 +41,12 @@ def is_valid_instagram_url(url: str) -> bool:
     return bool(INSTAGRAM_URL_RE.match(url.strip()))
 
 
+def clean_instagram_url(url: str) -> str:
+    """Strip query params and fragments — the API only wants the clean path URL."""
+    parsed = urlparse(url.strip())
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", "")).rstrip("/") + "/"
+
+
 async def _fetch_reel_info(url: str) -> dict:
     """Call RapidAPI and return {'video_url': ..., 'title': ...}."""
     api_key = os.environ.get("RAPIDAPI_KEY", "")
@@ -55,15 +62,17 @@ async def _fetch_reel_info(url: str) -> dict:
         "X-RapidAPI-Host": api_host,
     }
 
+    clean_url = clean_instagram_url(url)
+
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(
             f"https://{api_host}{api_endpoint}",
-            params={"reel_post_code_or_url": url, "type": "reel"},
+            params={"reel_post_code_or_url": clean_url, "type": "reel"},
             headers=headers,
         )
 
-    # DEBUG — always print raw response so we can fix the parser
-    print(f"=== RAPIDAPI STATUS: {resp.status_code} ===")
+    # DEBUG — print raw response until parser is confirmed working
+    print(f"=== RAPIDAPI STATUS: {resp.status_code} | URL sent: {clean_url} ===")
     print(resp.text[:3000])
     print("==========================================")
 
@@ -79,6 +88,12 @@ async def _fetch_reel_info(url: str) -> dict:
         payload = resp.json()
     except Exception as exc:
         raise ConversionError(f"Scraper API returned status {resp.status_code}.") from exc
+
+    # Some APIs return 200 with an error field instead of an HTTP error code
+    if "error" in payload and not payload.get("data"):
+        raise ConversionError(
+            "That Reel couldn't be found. It may be private, deleted, or unavailable."
+        )
 
     data = payload.get("data") or {}
 
